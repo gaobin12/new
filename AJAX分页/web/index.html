@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+		* {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+		}
+		#content {
+			width: 1200px;
+			margin: 0 auto;
+			padding: 50px;
+			font-size: 14px;
+
+		}
+		.title {
+			
+			display: flex;
+			padding: 10px;
+			font-weight: bold;
+			
+		}
+		.jobName {
+			width: 30%;
+		}
+		.jobType {
+			width: 15%;
+		}
+		.workPlace {
+			width: 15%;
+		}
+		.num {
+			width: 15%;
+		}
+		.date {
+			width: 25%;
+		}
+		.content {
+			padding: 10px;
+		}
+		.content li {
+			padding: 20px 0;
+			display: flex;
+		}
+	</style>
+</head>
+<body>
+	<div id="content">
+		<ul class="title">
+			<li class="jobName">职位名称</li>
+			<li class="jobType">职位类别</li>
+			<li class="workPlace">工作地点</li>
+			<li class="num">招聘人数</li>
+			<li class="date">更新时间</li>
+		</ul>
+		<ul class="content" id="list">
+			
+		</ul>
+		<div id="btns">
+			<button id="last">上一页</button>
+			<button id="next">下一页</button>
+		</div>
+	</div>
+	<script type="text/template"  id="tpl">
+		<li >
+			<span class="jobName"><%name%></span>
+			<span class="jobType"><%postType%></span>
+			<span class="workPlace"><%workPlace%></span>
+			<span class="num"><%recruitNum%></span>
+			<span class="date"><%publishDate%></span>
+		</li>
+	</script>
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript">
+// 获取模板
+var tpl = document.getElementById("tpl");
+var tplStr = tpl.innerHTML;
+var list = document.getElementById("list");
+var last = document.getElementById("last");
+var next = document.getElementById("next");
+var idx = 1;
+function sendAjax(idx) {
+	$.ajax({
+		url: "/data/" + idx + ".json",
+		data: "",
+		type: "get",
+		dataType: "json",
+		success: function(data) {
+			// 清空原来的数据
+			list.innerHTML = "";
+			var arr = data.postList;
+			for(var i = 0; i < arr.length; i++) {
+				var one = arr[i];
+				// 字典修正
+				// 因为字典中的数据不符合要求， 所以我们就修改一下字典中的数据
+				one.postType = one.postType.slice(4, 6)
+				list.innerHTML += format(tplStr, one)
+			}
+			// 新增一个历史记录
+			history.pushState({key: idx}, "", "/index.html#" + idx);
+		}
+	})
+}
+sendAjax(idx);
+function format(tpl, dic) {
+	// console.log(tpl)
+	// console.log(dic)
+	// 找到字符串中需要被替换的部分
+	return tpl.replace(/<%(\w+(\.\w+)*)%>/g, function(match, $1) {
+		// console.log($1)
+		// 以点分割 $1
+		var arr = $1.split(".");
+		// 定义一个变量 备份dic
+		var result = dic;
+		// 循环每一层级
+		for(var i = 0; i < arr.length -1; i++) {
+			// 让reuslt指向自身的下一层属性 
+			result = result[arr[i]]
+		}
+		return result[arr[i]]
+	}) 
+}
+
+// 点击下一页
+next.onclick = function() {
+	// 改变信号量
+	idx++;
+	if(idx >= 7) {
+		idx = 6;
+		return;
+	}
+	sendAjax(idx);
+}
+
+// 点击上一页
+last.onclick = function() {
+	// 改变信号量
+	idx--;
+	if(idx <= 0) {
+		idx = 1;
+		return;
+	}
+	sendAjax(idx);
+}
+
+// 添加onpopstate事件
+window.onpopstate = function(e) {
+	console.log(e.state)
+	$.ajax({
+		url: "/data/" + e.state.key + ".json",
+		data: "",
+		type: "get",
+		dataType: "json",
+		success: function(data) {
+			// 清空原来的数据
+			list.innerHTML = "";
+			var arr = data.postList;
+			for(var i = 0; i < arr.length; i++) {
+				var one = arr[i];
+				// 字典修正
+				// 因为字典中的数据不符合要求， 所以我们就修改一下字典中的数据
+				one.postType = one.postType.slice(4, 6)
+				list.innerHTML += format(tplStr, one)
+			}
+			
+		}
+	})
+}
+
+	</script>
+</body>
+</html>
